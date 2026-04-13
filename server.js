@@ -23,7 +23,7 @@ app.post('/api/compare', async (req, res) => {
     return res.status(200).end();
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+const apiKey = process.env.ANTHROPIC_API_KEY || process.env.RAILWAY_ANTHROPIC_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'API key not configured' });
   }
