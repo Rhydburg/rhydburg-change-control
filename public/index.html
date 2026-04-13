@@ -204,12 +204,35 @@ function handleDrop(e, slot) {
 function handleFile(f, slot) {
   const mime = getMime(f);
   const isDoc = !mime.startsWith('image/');
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    files[slot] = { name: f.name, mime, base64: ev.target.result.split(',')[1], dataUrl: ev.target.result, isDoc, icon: getIcon(mime) };
-    renderDropzone(slot);
-  };
-  reader.readAsDataURL(f);
+
+  if (isDoc) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      files[slot] = { name: f.name, mime, base64: ev.target.result.split(',')[1], dataUrl: ev.target.result, isDoc, icon: getIcon(mime) };
+      renderDropzone(slot);
+    };
+    reader.readAsDataURL(f);
+  } else {
+    // Image compress karke bhejo
+    const img = new Image();
+    const url = URL.createObjectURL(f);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      const MAX = 1200;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      files[slot] = { name: f.name, mime: 'image/jpeg', base64: dataUrl.split(',')[1], dataUrl, isDoc: false, icon: '🖼' };
+      renderDropzone(slot);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
 }
 
 function renderDropzone(slot) {
