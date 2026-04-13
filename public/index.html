@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rhydburg Pharmaceuticals Ltd. — Change Control</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;min-height:100vh;padding:24px 16px;color:#111827}
+.wrap{max-width:860px;margin:0 auto}
+
+.header{background:linear-gradient(135deg,#1e3a5f,#2563ab);border-radius:12px;padding:22px 26px;color:#fff;margin-bottom:22px;box-shadow:0 4px 20px rgba(30,58,95,.25)}
+.header .co{font-size:11px;opacity:.65;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.header h1{font-size:21px;font-weight:700;margin-bottom:5px}
+.header .sub{font-size:11px;opacity:.5}
+
+.uploads{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+@media(max-width:600px){.uploads{grid-template-columns:1fr}}
+
+.up-label{font-size:11px;font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:.08em}
+.up-label.prev{color:#dc2626}.up-label.new{color:#16a34a}
+
+.dropzone{border:2px dashed #d1d5db;border-radius:10px;min-height:160px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafafa;transition:all .2s;padding:14px;position:relative;overflow:hidden}
+.dropzone:hover{border-color:#94a3b8;background:#f8fafc}
+.dropzone.has-prev{border-color:#dc2626;background:#fff1f1}
+.dropzone.has-new{border-color:#16a34a;background:#f0fdf4}
+.dropzone .icon{font-size:30px;opacity:.25;margin-bottom:8px}
+.dropzone .hint{font-size:13px;color:#9ca3af}
+.dropzone .hint2{font-size:10px;color:#d1d5db;margin-top:4px}
+.dropzone img{max-width:100%;max-height:180px;object-fit:contain;border-radius:6px}
+.dropzone .doc-name{font-size:12px;font-weight:600;word-break:break-all;padding:0 8px;margin-top:6px}
+.dropzone .change-lbl{position:absolute;bottom:6px;right:8px;font-size:11px;background:#fff;padding:2px 8px;border-radius:4px;color:#6b7280;border:1px solid #e5e7eb}
+.dropzone .file-icon{font-size:38px;margin-bottom:6px}
+
+.err{background:#fee2e2;color:#991b1b;padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;font-weight:500;display:none}
+
+.btn{width:100%;padding:13px;font-size:14px;font-weight:700;background:#1e3a5f;color:#fff;border:none;border-radius:8px;cursor:pointer;margin-bottom:24px;letter-spacing:.02em;transition:background .2s}
+.btn:hover{background:#2d4f7f}
+.btn:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed}
+
+.cc-header{background:#1e3a5f;color:#fff;border-radius:10px 10px 0 0;padding:11px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.cc-header strong{font-weight:700}
+.cc-body{border:1px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;overflow:hidden}
+
+.field-header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+.field-header.prev-h{background:#fef2f2}.field-header.new-h{background:#f0fdf4}.field-header.rat-h{background:#eff6ff}
+.field-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.field-title.prev-t{color:#dc2626}.field-title.new-t{color:#16a34a}.field-title.rat-t{color:#1d4ed8}
+.field-divider{border-bottom:1px solid #f3f4f6}
+
+.edit-btn{font-size:11px;padding:3px 10px;border-radius:4px;background:#fff;cursor:pointer}
+.edit-btn.prev-e{border:1px solid #fca5a5;color:#dc2626}
+.edit-btn.new-e{border:1px solid #86efac;color:#16a34a}
+.edit-btn.rat-e{border:1px solid #93c5fd;color:#1d4ed8}
+
+.field-body{padding:12px 16px}
+.field-text{font-size:13px;line-height:1.85;color:#374151;white-space:pre-wrap;min-height:40px}
+.field-ta{width:100%;padding:9px 12px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;resize:vertical;outline:none;line-height:1.8}
+.field-ta:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+
+.thumbs{display:grid;gap:10px;margin-top:14px}
+.thumbs.two{grid-template-columns:1fr 1fr}
+.thumb{border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+.thumb-label{font-size:11px;font-weight:700;padding:5px 10px;text-transform:uppercase;letter-spacing:.05em}
+.thumb img{width:100%;display:block;max-height:160px;object-fit:contain}
+.thumb .doc-thumb{padding:18px;text-align:center;font-size:13px;color:#6b7280}
+
+.footer-note{text-align:center;margin-top:10px;font-size:11px;color:#9ca3af}
+
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="co">Rhydburg Pharmaceuticals Ltd. - QA/Regulatory</div>
+    <h1>Change Control — AI Entry Generator</h1>
+    <div class="sub">Form: RHP-CC-ART-01 &nbsp;|&nbsp; Upload file(s) → AI compares → 3 CC fields auto-filled</div>
+  </div>
+
+  <!-- Upload boxes -->
+  <div class="uploads">
+    <div>
+      <div class="up-label prev">Current / Previous Artwork</div>
+      <div class="dropzone" id="drop-prev" onclick="document.getElementById('inp-prev').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event,'prev')">
+        <input type="file" id="inp-prev" accept="image/*,application/pdf,.doc,.docx,.odt" style="display:none" onchange="handleFile(this.files[0],'prev')"/>
+        <div class="icon">📎</div>
+        <div class="hint">Click or drag & drop</div>
+        <div class="hint2">Image / PDF / DOC / DOCX / ODT</div>
+        <div class="hint2" style="margin-top:2px">Google Docs & Zoho → export as DOCX/PDF</div>
+      </div>
+    </div>
+    <div>
+      <div class="up-label new">New / Revised Artwork (optional)</div>
+      <div class="dropzone" id="drop-new" onclick="document.getElementById('inp-new').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event,'new')">
+        <input type="file" id="inp-new" accept="image/*,application/pdf,.doc,.docx,.odt" style="display:none" onchange="handleFile(this.files[0],'new')"/>
+        <div class="icon">📎</div>
+        <div class="hint">Click or drag & drop</div>
+        <div class="hint2">Image / PDF / DOC / DOCX / ODT</div>
+        <div class="hint2" style="margin-top:2px">Google Docs & Zoho → export as DOCX/PDF</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="err" id="err-box"></div>
+
+  <button class="btn" id="gen-btn" onclick="generate()">Compare & Generate Change Control Entry →</button>
+
+  <!-- Result -->
+  <div id="result-wrap" style="display:none">
+    <div class="cc-header">
+      <strong>Change Control Entry — Artwork Revision</strong>
+      <span style="opacity:.7">Rhydburg Pharmaceuticals Ltd. QA</span>
+    </div>
+    <div class="cc-body">
+
+      <!-- Field 1 -->
+      <div class="field-divider">
+        <div class="field-header prev-h">
+          <div class="field-title prev-t">1. Current / Previous State</div>
+          <button class="edit-btn prev-e" onclick="toggleEdit('prev-field','prev-ta','this')">Edit</button>
+        </div>
+        <div class="field-body">
+          <div class="field-text" id="prev-field"></div>
+          <textarea class="field-ta" id="prev-ta" rows="5" style="display:none" oninput="syncText('prev-field','prev-ta')"></textarea>
+        </div>
+      </div>
+
+      <!-- Field 2 -->
+      <div class="field-divider">
+        <div class="field-header new-h">
+          <div class="field-title new-t">2. New Suggested State</div>
+          <button class="edit-btn new-e" onclick="toggleEdit('new-field','new-ta','this')">Edit</button>
+        </div>
+        <div class="field-body">
+          <div class="field-text" id="new-field"></div>
+          <textarea class="field-ta" id="new-ta" rows="5" style="display:none" oninput="syncText('new-field','new-ta')"></textarea>
+        </div>
+      </div>
+
+      <!-- Field 3 -->
+      <div>
+        <div class="field-header rat-h">
+          <div class="field-title rat-t">3. Scientific Rationale</div>
+          <button class="edit-btn rat-e" onclick="toggleEdit('rat-field','rat-ta','this')">Edit</button>
+        </div>
+        <div class="field-body">
+          <div class="field-text" id="rat-field"></div>
+          <textarea class="field-ta" id="rat-ta" rows="5" style="display:none" oninput="syncText('rat-field','rat-ta')"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thumbnails -->
+    <div class="thumbs" id="thumbs-wrap" style="display:none"></div>
+    <div class="footer-note">AI-generated — please review before official submission | Rhydburg Pharmaceuticals Ltd. QA</div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM = `You are a pharmaceutical regulatory expert for artwork Change Control documentation.
+
+You will receive ONE or TWO files (images or PDFs of pharmaceutical artworks/labels):
+- File 1: Previous/Current artwork
+- File 2: New/Revised artwork (if provided)
+
+Analyze and compare them. Return ONLY valid JSON — no markdown, no backticks, no explanation outside JSON.
+
+{
+  "currentState": "Detailed paragraph describing the CURRENT/PREVIOUS artwork — what was missing, incorrect, or absent.",
+  "newSuggestedState": "Detailed paragraph describing the NEW/REVISED artwork — what was added, corrected, or updated.",
+  "scientificRationale": "Paragraph explaining the regulatory/quality scientific rationale for these changes."
+}
+
+Be specific, precise, and use professional pharmaceutical regulatory language.`;
+
+const files = { prev: null, new: null };
+
+function getMime(f) {
+  if (f.type) return f.type;
+  if (f.name.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (f.name.endsWith('.doc'))  return 'application/msword';
+  if (f.name.endsWith('.odt'))  return 'application/vnd.oasis.opendocument.text';
+  return '';
+}
+
+function getIcon(mime) {
+  if (mime === 'application/pdf') return '📄';
+  if (mime.includes('word') || mime.includes('msword') || mime.includes('odt')) return '📝';
+  if (mime.startsWith('image/')) return '🖼';
+  return '📎';
+}
+
+function handleDrop(e, slot) {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f, slot);
+}
+
+function handleFile(f, slot) {
+  const mime = getMime(f);
+  const isDoc = !mime.startsWith('image/');
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    files[slot] = { name: f.name, mime, base64: ev.target.result.split(',')[1], dataUrl: ev.target.result, isDoc, icon: getIcon(mime) };
+    renderDropzone(slot);
+  };
+  reader.readAsDataURL(f);
+}
+
+function renderDropzone(slot) {
+  const f = files[slot];
+  const dz = document.getElementById('drop-' + slot);
+  const cls = slot === 'prev' ? 'has-prev' : 'has-new';
+  dz.className = 'dropzone ' + cls;
+  if (f.isDoc) {
+    dz.innerHTML = `
+      <div class="file-icon">${f.icon}</div>
+      <div class="doc-name" style="color:${slot==='prev'?'#dc2626':'#16a34a'}">${f.name}</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:6px">Uploaded — click to change</div>
+      <input type="file" id="inp-${slot}" accept="image/*,application/pdf,.doc,.docx,.odt" style="display:none" onchange="handleFile(this.files[0],'${slot}')"/>
+    `;
+    dz.onclick = () => document.getElementById('inp-' + slot).click();
+  } else {
+    dz.innerHTML = `
+      <img src="${f.dataUrl}" alt="artwork"/>
+      <div class="change-lbl">click to change</div>
+      <input type="file" id="inp-${slot}" accept="image/*,application/pdf,.doc,.docx,.odt" style="display:none" onchange="handleFile(this.files[0],'${slot}')"/>
+    `;
+    dz.onclick = () => document.getElementById('inp-' + slot).click();
+  }
+}
+
+function buildContent() {
+  const content = [];
+  const add = (f, label) => {
+    content.push({ type: 'text', text: label });
+    if (f.isDoc) {
+      content.push({ type: 'document', source: { type: 'base64', media_type: f.mime, data: f.base64 } });
+    } else {
+      content.push({ type: 'image', source: { type: 'base64', media_type: f.mime, data: f.base64 } });
+    }
+  };
+  if (files.prev) add(files.prev, 'FILE 1 — PREVIOUS / CURRENT artwork:');
+  if (files.new)  add(files.new,  'FILE 2 — NEW / REVISED artwork:');
+  content.push({ type: 'text', text: 'Compare and return ONLY valid JSON with fields: currentState, newSuggestedState, scientificRationale. No markdown.' });
+  return content;
+}
+
+function showErr(msg) {
+  const b = document.getElementById('err-box');
+  b.textContent = msg; b.style.display = msg ? 'block' : 'none';
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = on;
+  btn.innerHTML = on
+    ? '<span class="spinner"></span>AI analyze kar raha hai — please wait...'
+    : 'Compare & Generate Change Control Entry →';
+}
+
+async function generate() {
+  if (!files.prev) { showErr('Kam se kam Previous Artwork upload karo.'); return; }
+  showErr('');
+  setLoading(true);
+  document.getElementById('result-wrap').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 3000,
+        system: SYSTEM,
+        messages: [{ role: 'user', content: buildContent() }]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API Error ' + res.status);
+
+    const raw = (data.content || []).map(b => b.text || '').join('').replace(/```json|```/g, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch {
+      const ef = (key, nextKeys) => {
+        const la = nextKeys.map(n => '"' + n + '"').join('|');
+        const re = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)(?=",?\\s*(?:' + la + ')|}\\s*$)');
+        const m = raw.match(re);
+        return m ? m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : '';
+      };
+      parsed = {
+        currentState: ef('currentState', ['newSuggestedState','scientificRationale']) || 'Could not parse — please retry.',
+        newSuggestedState: ef('newSuggestedState', ['scientificRationale']) || '',
+        scientificRationale: ef('scientificRationale', []) || ''
+      };
+    }
+
+    document.getElementById('prev-field').textContent = parsed.currentState || '';
+    document.getElementById('prev-ta').value          = parsed.currentState || '';
+    document.getElementById('new-field').textContent  = parsed.newSuggestedState || '';
+    document.getElementById('new-ta').value           = parsed.newSuggestedState || '';
+    document.getElementById('rat-field').textContent  = parsed.scientificRationale || '';
+    document.getElementById('rat-ta').value           = parsed.scientificRationale || '';
+
+    // Thumbnails
+    const tw = document.getElementById('thumbs-wrap');
+    const thumbSlots = [
+      { slot: 'prev', label: 'Previous Artwork', bg: '#fee2e2', color: '#dc2626' },
+      { slot: 'new',  label: 'New Artwork',       bg: '#dcfce7', color: '#16a34a' }
+    ].filter(s => files[s.slot]);
+    if (thumbSlots.length) {
+      tw.className = 'thumbs' + (thumbSlots.length === 2 ? ' two' : '');
+      tw.style.display = 'grid';
+      tw.innerHTML = thumbSlots.map(s => {
+        const f = files[s.slot];
+        const inner = f.isDoc
+          ? `<div class="doc-thumb">${f.icon} ${f.name}</div>`
+          : `<img src="${f.dataUrl}" alt="${s.label}"/>`;
+        return `<div class="thumb"><div class="thumb-label" style="background:${s.bg};color:${s.color}">${s.label}</div>${inner}</div>`;
+      }).join('');
+    }
+
+    document.getElementById('result-wrap').style.display = 'block';
+
+  } catch(e) {
+    showErr('Error: ' + e.message);
+  }
+  setLoading(false);
+}
+
+// Edit / Save toggle
+const editState = {};
+function toggleEdit(fieldId, taId, btnRef) {
+  const field = document.getElementById(fieldId);
+  const ta    = document.getElementById(taId);
+  const btn   = event.target;
+  if (!editState[fieldId]) {
+    field.style.display = 'none'; ta.style.display = 'block'; ta.focus();
+    btn.textContent = 'Save'; editState[fieldId] = true;
+  } else {
+    field.textContent = ta.value; field.style.display = 'block'; ta.style.display = 'none';
+    btn.textContent = 'Edit'; editState[fieldId] = false;
+  }
+}
+function syncText(fieldId, taId) {
+  // live sync while editing (optional)
+}
+</script>
+</body>
+</html>
