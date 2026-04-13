@@ -48,6 +48,7 @@ const apiKey = process.env.ANTHROPIC_API_KEY || process.env.RAILWAY_ANTHROPIC_AP
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify(body),
+      timeout: 120000,
     });
 
     const text = await response.text();
