@@ -1,0 +1,9 @@
+{
+  "name": "rhydburg-change-control",
+  "version": "1.0.0",
+  "description": "Rhydburg Pharmaceuticals Ltd. - AI Change Control Entry Generator",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
