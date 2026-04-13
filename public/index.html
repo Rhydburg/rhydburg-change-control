@@ -162,196 +162,272 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;min-height:1
 </div>
 
 <script>
-const SYSTEM = `You are a pharmaceutical regulatory expert for artwork Change Control documentation.
-
+      const SYSTEM = `You are a pharmaceutical regulatory expert for artwork Change Control documentation.
+ 
 You will receive ONE or TWO files (images or PDFs of pharmaceutical artworks/labels):
 - File 1: Previous/Current artwork
 - File 2: New/Revised artwork (if provided)
-
+ 
 Analyze and compare them. Return ONLY valid JSON — no markdown, no backticks, no explanation outside JSON.
-
+ 
 {
   "currentState": "Detailed paragraph describing the CURRENT/PREVIOUS artwork — what was missing, incorrect, or absent.",
   "newSuggestedState": "Detailed paragraph describing the NEW/REVISED artwork — what was added, corrected, or updated.",
   "scientificRationale": "Paragraph explaining the regulatory/quality scientific rationale for these changes."
 }
-
+ 
 Be specific, precise, and use professional pharmaceutical regulatory language.`;
-
-const files = { prev: null, new: null };
-
-function getMime(f) {
-  if (f.type) return f.type;
-  if (f.name.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-  if (f.name.endsWith('.doc'))  return 'application/msword';
-  if (f.name.endsWith('.odt'))  return 'application/vnd.oasis.opendocument.text';
-  return '';
-}
-
-function getIcon(mime) {
-  if (mime === 'application/pdf') return '📄';
-  if (mime.includes('word') || mime.includes('msword') || mime.includes('odt')) return '📝';
-  if (mime.startsWith('image/')) return '🖼';
-  return '📎';
-}
-
-function handleDrop(e, slot) {
-  e.preventDefault();
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f, slot);
-}
-
-function handleFile(f, slot) {
-  const mime = getMime(f);
-  const isDoc = !mime.startsWith('image/');
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    files[slot] = { name: f.name, mime, base64: ev.target.result.split(',')[1], dataUrl: ev.target.result, isDoc, icon: getIcon(mime) };
-    renderDropzone(slot);
-  };
-  reader.readAsDataURL(f);
-}
-
-function renderDropzone(slot) {
-  const f = files[slot];
-  const dz = document.getElementById('drop-' + slot);
-  const cls = slot === 'prev' ? 'has-prev' : 'has-new';
-  dz.className = 'dropzone ' + cls;
-  if (f.isDoc) {
-    dz.innerHTML = `
+ 
+      const files = { prev: null, new: null };
+ 
+      function getMime(f) {
+        if (f.type) return f.type;
+        if (f.name.endsWith(".docx"))
+          return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        if (f.name.endsWith(".doc")) return "application/msword";
+        if (f.name.endsWith(".odt"))
+          return "application/vnd.oasis.opendocument.text";
+        return "";
+      }
+ 
+      function getIcon(mime) {
+        if (mime === "application/pdf") return "📄";
+        if (
+          mime.includes("word") ||
+          mime.includes("msword") ||
+          mime.includes("odt")
+        )
+          return "📝";
+        if (mime.startsWith("image/")) return "🖼";
+        return "📎";
+      }
+ 
+      function handleDrop(e, slot) {
+        e.preventDefault();
+        const f = e.dataTransfer.files[0];
+        if (f) handleFile(f, slot);
+      }
+ 
+      // =====================================================
+      // Handle file uploads (base64 encoding)
+      // =====================================================
+      function handleFile(f, slot) {
+        const mime = getMime(f);
+        const isDoc = !mime.startsWith("image/");
+ 
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const base64 = ev.target.result.split(",")[1];
+          const dataUrl = ev.target.result;
+ 
+          files[slot] = {
+            name: f.name,
+            mime,
+            base64,
+            dataUrl,
+            isDoc,
+            icon: getIcon(mime),
+            size: (f.size / 1024 / 1024).toFixed(2) + ' MB',
+          };
+          renderDropzone(slot);
+        };
+        reader.readAsDataURL(f);
+      }
+ 
+      function renderDropzone(slot) {
+        const f = files[slot];
+        const dz = document.getElementById("drop-" + slot);
+        const cls = slot === "prev" ? "has-prev" : "has-new";
+        dz.className = "dropzone " + cls;
+        if (f.isDoc) {
+          dz.innerHTML = `
       <div class="file-icon">${f.icon}</div>
-      <div class="doc-name" style="color:${slot==='prev'?'#dc2626':'#16a34a'}">${f.name}</div>
-      <div style="font-size:11px;color:#9ca3af;margin-top:6px">Uploaded — click to change</div>
+      <div class="doc-name" style="color:${slot === "prev" ? "#dc2626" : "#16a34a"}">${f.name}</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:6px">${f.size} — click to change</div>
       <input type="file" id="inp-${slot}" accept="image/*,application/pdf,.doc,.docx,.odt" style="display:none" onchange="handleFile(this.files[0],'${slot}')"/>
     `;
-    dz.onclick = () => document.getElementById('inp-' + slot).click();
-  } else {
-    dz.innerHTML = `
-      <img src="${f.dataUrl}" alt="artwork"/>
+          dz.onclick = () => document.getElementById("inp-" + slot).click();
+        } else {
+          dz.innerHTML = `
+      <img src="${f.dataUrl}" alt="artwork" style="max-width:100%;max-height:200px"/>
       <div class="change-lbl">click to change</div>
       <input type="file" id="inp-${slot}" accept="image/*,application/pdf,.doc,.docx,.odt" style="display:none" onchange="handleFile(this.files[0],'${slot}')"/>
     `;
-    dz.onclick = () => document.getElementById('inp-' + slot).click();
-  }
-}
-
-function buildContent() {
-  const content = [];
-  const add = (f, label) => {
-    content.push({ type: 'text', text: label });
-    if (f.isDoc) {
-      content.push({ type: 'document', source: { type: 'base64', media_type: f.mime, data: f.base64 } });
-    } else {
-      content.push({ type: 'image', source: { type: 'base64', media_type: f.mime, data: f.base64 } });
-    }
-  };
-  if (files.prev) add(files.prev, 'FILE 1 — PREVIOUS / CURRENT artwork:');
-  if (files.new)  add(files.new,  'FILE 2 — NEW / REVISED artwork:');
-  content.push({ type: 'text', text: 'Compare and return ONLY valid JSON with fields: currentState, newSuggestedState, scientificRationale. No markdown.' });
-  return content;
-}
-
-function showErr(msg) {
-  const b = document.getElementById('err-box');
-  b.textContent = msg; b.style.display = msg ? 'block' : 'none';
-}
-
-function setLoading(on) {
-  const btn = document.getElementById('gen-btn');
-  btn.disabled = on;
-  btn.innerHTML = on
-    ? '<span class="spinner"></span>AI analyze kar raha hai — please wait...'
-    : 'Compare & Generate Change Control Entry →';
-}
-
-async function generate() {
-  if (!files.prev) { showErr('Kam se kam Previous Artwork upload karo.'); return; }
-  showErr('');
-  setLoading(true);
-  document.getElementById('result-wrap').style.display = 'none';
-
-  try {
-    const res = await fetch('/api/compare', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 3000,
-        system: SYSTEM,
-        messages: [{ role: 'user', content: buildContent() }]
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'API Error ' + res.status);
-
-    const raw = (data.content || []).map(b => b.text || '').join('').replace(/```json|```/g, '').trim();
-    let parsed;
-    try { parsed = JSON.parse(raw); }
-    catch {
-      const ef = (key, nextKeys) => {
-        const la = nextKeys.map(n => '"' + n + '"').join('|');
-        const re = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)(?=",?\\s*(?:' + la + ')|}\\s*$)');
-        const m = raw.match(re);
-        return m ? m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : '';
-      };
-      parsed = {
-        currentState: ef('currentState', ['newSuggestedState','scientificRationale']) || 'Could not parse — please retry.',
-        newSuggestedState: ef('newSuggestedState', ['scientificRationale']) || '',
-        scientificRationale: ef('scientificRationale', []) || ''
-      };
-    }
-
-    document.getElementById('prev-field').textContent = parsed.currentState || '';
-    document.getElementById('prev-ta').value          = parsed.currentState || '';
-    document.getElementById('new-field').textContent  = parsed.newSuggestedState || '';
-    document.getElementById('new-ta').value           = parsed.newSuggestedState || '';
-    document.getElementById('rat-field').textContent  = parsed.scientificRationale || '';
-    document.getElementById('rat-ta').value           = parsed.scientificRationale || '';
-
-    // Thumbnails
-    const tw = document.getElementById('thumbs-wrap');
-    const thumbSlots = [
-      { slot: 'prev', label: 'Previous Artwork', bg: '#fee2e2', color: '#dc2626' },
-      { slot: 'new',  label: 'New Artwork',       bg: '#dcfce7', color: '#16a34a' }
-    ].filter(s => files[s.slot]);
-    if (thumbSlots.length) {
-      tw.className = 'thumbs' + (thumbSlots.length === 2 ? ' two' : '');
-      tw.style.display = 'grid';
-      tw.innerHTML = thumbSlots.map(s => {
-        const f = files[s.slot];
-        const inner = f.isDoc
-          ? `<div class="doc-thumb">${f.icon} ${f.name}</div>`
-          : `<img src="${f.dataUrl}" alt="${s.label}"/>`;
-        return `<div class="thumb"><div class="thumb-label" style="background:${s.bg};color:${s.color}">${s.label}</div>${inner}</div>`;
-      }).join('');
-    }
-
-    document.getElementById('result-wrap').style.display = 'block';
-
-  } catch(e) {
-    showErr('Error: ' + e.message);
-  }
-  setLoading(false);
-}
-
-// Edit / Save toggle
-const editState = {};
-function toggleEdit(fieldId, taId, btnRef) {
-  const field = document.getElementById(fieldId);
-  const ta    = document.getElementById(taId);
-  const btn   = event.target;
-  if (!editState[fieldId]) {
-    field.style.display = 'none'; ta.style.display = 'block'; ta.focus();
-    btn.textContent = 'Save'; editState[fieldId] = true;
-  } else {
-    field.textContent = ta.value; field.style.display = 'block'; ta.style.display = 'none';
-    btn.textContent = 'Edit'; editState[fieldId] = false;
-  }
-}
-function syncText(fieldId, taId) {
-  // live sync while editing (optional)
-}
-</script>
+          dz.onclick = () => document.getElementById("inp-" + slot).click();
+        }
+      }
+ 
+      // =====================================================
+      // Build content with base64 (NO S3)
+      // =====================================================
+      function buildContent() {
+        const content = [];
+        const add = (f, label) => {
+          content.push({ type: "text", text: label });
+          
+          if (f.isDoc) {
+            content.push({
+              type: "document",
+              source: { type: "base64", media_type: f.mime, data: f.base64 },
+            });
+          } else {
+            content.push({
+              type: "image",
+              source: { type: "base64", media_type: f.mime, data: f.base64 },
+            });
+          }
+        };
+ 
+        if (files.prev) add(files.prev, "FILE 1 — PREVIOUS / CURRENT artwork:");
+        if (files.new) add(files.new, "FILE 2 — NEW / REVISED artwork:");
+        
+        content.push({
+          type: "text",
+          text: "Compare and return ONLY valid JSON with fields: currentState, newSuggestedState, scientificRationale. No markdown.",
+        });
+        return content;
+      }
+ 
+      function showErr(msg) {
+        const b = document.getElementById("err-box");
+        b.textContent = msg;
+        b.style.display = msg ? "block" : "none";
+      }
+ 
+      function setLoading(on) {
+        const btn = document.getElementById("gen-btn");
+        btn.disabled = on;
+        btn.innerHTML = on
+          ? '<span class="spinner"></span>AI analyze kar raha hai — please wait...'
+          : "Compare & Generate Change Control Entry →";
+      }
+ 
+      async function generate() {
+        if (!files.prev) {
+          showErr("Kam se kam Previous Artwork upload karo.");
+          return;
+        }
+        showErr("");
+        setLoading(true);
+        document.getElementById("result-wrap").style.display = "none";
+ 
+        try {
+          const res = await fetch("/api/compare", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-haiku-4-5-20251001",
+              max_tokens: 3000,
+              system: SYSTEM,
+              messages: [{ role: "user", content: buildContent() }],
+            }),
+          });
+ 
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "API Error " + res.status);
+ 
+          const raw = (data.content || [])
+            .map((b) => b.text || "")
+            .join("")
+            .replace(/```json|```/g, "")
+            .trim();
+          let parsed;
+          try {
+            parsed = JSON.parse(raw);
+          } catch {
+            const ef = (key, nextKeys) => {
+              const la = nextKeys.map((n) => '"' + n + '"').join("|");
+              const re = new RegExp(
+                '"' +
+                  key +
+                  '"\\s*:\\s*"([\\s\\S]*?)(?=",?\\s*(?:' +
+                  la +
+                  ")|}\\s*$)",
+              );
+              const m = raw.match(re);
+              return m ? m[1].replace(/\\n/g, "\n").replace(/\\"/g, '"') : "";
+            };
+            parsed = {
+              currentState:
+                ef("currentState", [
+                  "newSuggestedState",
+                  "scientificRationale",
+                ]) || "Could not parse — please retry.",
+              newSuggestedState:
+                ef("newSuggestedState", ["scientificRationale"]) || "",
+              scientificRationale: ef("scientificRationale", []) || "",
+            };
+          }
+ 
+          document.getElementById("prev-field").textContent =
+            parsed.currentState || "";
+          document.getElementById("prev-ta").value = parsed.currentState || "";
+          document.getElementById("new-field").textContent =
+            parsed.newSuggestedState || "";
+          document.getElementById("new-ta").value =
+            parsed.newSuggestedState || "";
+          document.getElementById("rat-field").textContent =
+            parsed.scientificRationale || "";
+          document.getElementById("rat-ta").value =
+            parsed.scientificRationale || "";
+ 
+          // Thumbnails
+          const tw = document.getElementById("thumbs-wrap");
+          const thumbSlots = [
+            {
+              slot: "prev",
+              label: "Previous Artwork",
+              bg: "#fee2e2",
+              color: "#dc2626",
+            },
+            {
+              slot: "new",
+              label: "New Artwork",
+              bg: "#dcfce7",
+              color: "#16a34a",
+            },
+          ].filter((s) => files[s.slot]);
+          if (thumbSlots.length) {
+            tw.className = "thumbs" + (thumbSlots.length === 2 ? " two" : "");
+            tw.style.display = "grid";
+            tw.innerHTML = thumbSlots
+              .map((s) => {
+                const f = files[s.slot];
+                const inner = f.isDoc
+                  ? `<div class="doc-thumb">${f.icon} ${f.name}</div>`
+                  : `<img src="${f.dataUrl}" alt="${s.label}" style="max-width:100%;max-height:150px"/>`;
+                return `<div class="thumb"><div class="thumb-label" style="background:${s.bg};color:${s.color}">${s.label}</div>${inner}</div>`;
+              })
+              .join("");
+          }
+ 
+          document.getElementById("result-wrap").style.display = "block";
+        } catch (e) {
+          showErr("Error: " + e.message);
+        }
+        setLoading(false);
+      }
+ 
+      // Edit / Save toggle
+      const editState = {};
+      function toggleEdit(fieldId, taId, btnRef) {
+        const field = document.getElementById(fieldId);
+        const ta = document.getElementById(taId);
+        const btn = event.target;
+        if (!editState[fieldId]) {
+          field.style.display = "none";
+          ta.style.display = "block";
+          ta.focus();
+          btn.textContent = "Save";
+          editState[fieldId] = true;
+        } else {
+          field.textContent = ta.value;
+          field.style.display = "block";
+          ta.style.display = "none";
+          btn.textContent = "Edit";
+          editState[fieldId] = false;
+        }
+      }
+    </script>
 </body>
 </html>
